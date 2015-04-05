@@ -19,24 +19,56 @@ app.run(function($ionicPlatform) {
 });
 
 app.controller('TodoCtrl', 
-    ['$scope', '$timeout', '$ionicModal', '$ionicSideMenuDelegate', 'Projects',
-    function ($scope, $timeout, $ionicModal, $ionicSideMenuDelegate, Projects) {
+    ['$scope', '$timeout', '$ionicModal', '$ionicSideMenuDelegate', '$ionicPopup', 'Projects',
+    function ($scope, $timeout, $ionicModal, $ionicSideMenuDelegate, $ionicPopup, Projects) {
         var createProject = function(projectTitle) {
             var newProject = Projects.newProject(projectTitle);
             $scope.projects.push(newProject);
             Projects.save($scope.projects);
             $scope.selectProject(newProject, $scope.projects.length-1);
         };
+        $scope.popup = [];
+        
+        $scope.isDefaultState = function () {
+            var state = false;
+            if ($scope.projects.length < 1) {
+                state = true;
+            }
+            return state;
+        }
 
         $scope.projects = Projects.all();
         
         $scope.activeProject = $scope.projects[Projects.getLastActiveIndex()];
 
         $scope.newProject = function() {
-            var projectTitle = prompt('Project Name');
-            if (projectTitle) {
-                createProject(projectTitle);
-            }
+            var theProject = $ionicPopup.show({
+                template: '<input type="text" ng-model="popup.title">',
+                title: 'Enter project title',
+                subTitle: 'something something',
+                scope: $scope,
+                buttons: [
+                    { text: 'Cancel' },
+                    {
+                        text: '<b>Save</b>',
+                        type: 'button-positive',
+                        onTap: function (event) {
+                            if (!$scope.popup.title) {
+                                event.preventDefault();
+                            } else {
+                                return $scope.popup.title;
+                            }
+                        }
+                        
+                    }
+                ]
+            });
+            theProject.then(function (results) {
+                if ($scope.popup.title) {
+                    createProject($scope.popup.title);
+                    $scope.popup = [];
+                }
+            });
         };
 
         $scope.selectProject = function(project, index) {
@@ -78,17 +110,18 @@ app.controller('TodoCtrl',
             $ionicSideMenuDelegate.toggleLeft();
         };
 
-        $timeout(function() {
-            if ($scope.projects.length == 0) {
-                while (true) {
-                    var projectTitle = prompt('Your first project title:');
-                    if (projectTitle) {
-                        createProject(projectTitle);
-                        break;
-                    }
-                }
-            }
-        });
+
+//        $timeout(function() {
+//            if ($scope.projects.length == 0) {
+//                while (true) {
+//                    var projectTitle = prompt('Your first project title:');
+//                    if (projectTitle) {
+//                        createProject(projectTitle);
+//                        break;
+//                    }
+//                }
+//            }
+//        });
     }]
 );
 

@@ -20,10 +20,11 @@
 
     <body ng-app="todo" ng-controller="TodoCtrl">
 
+
         <ion-side-menus>
             <ion-side-menu-content>
 
-                <ion-header-bar class="bar-dark">
+                <ion-header-bar class="bar-dark" ng-show="!isDefaultState()">
                     <button class="button button-icon" ng-click="toggleProjects()">
                         <i class="icon ion-navicon"></i>
                     </button>
@@ -36,7 +37,15 @@
                 </ion-header-bar>
 
                 <ion-content scroll="false">
-                    <ion-list>
+                    <ion-pane class="no-projects" padding="true" ng-show="isDefaultState()">
+                        <button class="button button-icon button-add" ng-click="newProject()">
+                            <i class="icon ion-plus-round"></i>
+                        </button>
+                        <h3>No projects.</h3>
+                        <h3>Tap to add one!</h3>
+                    </ion-pane>
+
+                    <ion-list ng-show="!isDefaultState()">
                         <ion-item ng-repeat="task in activeProject.tasks"> {{ task.title }} </ion-item>
                     </ion-list>
                 </ion-content>

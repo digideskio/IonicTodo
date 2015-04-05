@@ -21,3 +21,21 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
 // Include all of Ionic
 @import "www/lib/ionic/scss/ionic";
 
+.no-projects {
+    color: #c0c0c0;
+    text-align: center;
+    
+    .button-add {
+        border: 3px solid;
+        border-radius: 100%;
+        color: #c0c0c0;
+        font-size: 42px;
+        height: 150px;
+        margin: 1em auto;
+        width: 150px;
+    }
+
+    h3 {
+        color: #c0c0c0;
+    }
+}
