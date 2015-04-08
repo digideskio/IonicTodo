@@ -1,5 +1,8 @@
 {
   "name": "todo",
   "app_id": "07135382",
-  "gulpStartupTasks": ["sass", "watch"]
+  "gulpStartupTasks": [
+    "sass",
+    "watch"
+  ]
 }

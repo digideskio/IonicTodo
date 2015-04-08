@@ -31,7 +31,7 @@
 
                     <h1 class="title">{{ activeProject.title }}</h1>
 
-                    <button class="button button-icon" ng-click="newTask()">
+                    <button class="button button-icon" ng-click="manTasks()">
                         <i class="icon ion-compose"></i>
                     </button>
                 </ion-header-bar>
@@ -45,9 +45,11 @@
                         <h3>Tap to add one!</h3>
                     </ion-pane>
 
-                    <ion-list ng-show="!isDefaultState()">
-                        <ion-item ng-repeat="task in activeProject.tasks"> {{ task.title }} </ion-item>
-                    </ion-list>
+                    <div class="list" ng-show="!isDefaultState()">
+                        <ion-checkbox ng-repeat="task in activeProject.tasks" ng-checked="task.checked" ng-click="completeTaks(task)">
+                            {{ task.title }}
+                        </ion-checkbox>
+                    </div>
                 </ion-content>
             </ion-side-menu-content>
 

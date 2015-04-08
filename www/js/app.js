@@ -18,39 +18,19 @@ app.run(function($ionicPlatform) {
     });
 });
 
-app.controller('TodoCtrl', 
-    ['$scope', '$timeout', '$ionicModal', '$ionicSideMenuDelegate', '$ionicPopup', 'Projects',
-    function ($scope, $timeout, $ionicModal, $ionicSideMenuDelegate, $ionicPopup, Projects) {
-        var createProject = function(projectTitle) {
-            var newProject = Projects.newProject(projectTitle);
-            $scope.projects.push(newProject);
-            Projects.save($scope.projects);
-            $scope.selectProject(newProject, $scope.projects.length-1);
-        };
-        $scope.popup = [];
-        
-        $scope.isDefaultState = function () {
-            var state = false;
-            if ($scope.projects.length < 1) {
-                state = true;
-            }
-            return state;
-        }
+app.controller('TodoCtrl',
+    ['$scope', '$timeout', '$ionicModal', '$ionicSideMenuDelegate', '$ionicPopup', 'TaskService', 'ProjectService',
+    function ($scope, $timeout, $ionicModal, $ionicSideMenuDelegate, $ionicPopup, TaskService, ProjectService) {
 
-        $scope.projects = Projects.all();
-        
-        $scope.activeProject = $scope.projects[Projects.getLastActiveIndex()];
-
-        $scope.newProject = function() {
-            var theProject = $ionicPopup.show({
-                template: '<input type="text" ng-model="popup.title">',
-                title: 'Enter project title',
-                subTitle: 'something something',
+        $scope.newProject = function () {
+            var projectPopup = $ionicPopup.show({
+                template: '<input autofocus type="text" ng-model="popup.title">',
+                title: 'Name your project:',
                 scope: $scope,
                 buttons: [
-                    { text: 'Cancel' },
+                    {text: 'Cancel'},
                     {
-                        text: '<b>Save</b>',
+                        text: 'Save',
                         type: 'button-positive',
                         onTap: function (event) {
                             if (!$scope.popup.title) {
@@ -59,96 +39,79 @@ app.controller('TodoCtrl',
                                 return $scope.popup.title;
                             }
                         }
-                        
                     }
                 ]
             });
-            theProject.then(function (results) {
+            projectPopup.then(function (result) {
                 if ($scope.popup.title) {
-                    createProject($scope.popup.title);
-                    $scope.popup = [];
+                    createProject();
                 }
             });
         };
 
-        $scope.selectProject = function(project, index) {
-            $scope.activeProject = project;
-            Projects.setLastActiveIndex(index);
-            $ionicSideMenuDelegate.toggleLeft(false);
-        };
-
-        $ionicModal.fromTemplateUrl('new-task.html', function(modal) {
-            $scope.taskModal = modal;
-        }, {
-            scope: $scope,
-            animation: 'slide-in-up'
-        });
-
-        $scope.createTask = function(task) {
-            if (!$scope.activeProject || !task) {
-                return;
-            }
-            $scope.activeProject.tasks.push({
-                title: task.title
-            });
-            $scope.taskModal.hide();
-
-            Projects.save($scope.projects);
-
-            task.title = "";
-        };
-
-        $scope.newTask = function() {
-            $scope.taskModal.show();
-        };
-
-        $scope.closeNewTask = function() {
-            $scope.taskModal.hide();
-        };
-
-        $scope.toggleProjects = function() {
-            $ionicSideMenuDelegate.toggleLeft();
-        };
-
-
-//        $timeout(function() {
-//            if ($scope.projects.length == 0) {
-//                while (true) {
-//                    var projectTitle = prompt('Your first project title:');
-//                    if (projectTitle) {
-//                        createProject(projectTitle);
-//                        break;
-//                    }
-//                }
-//            }
-//        });
     }]
 );
 
-app.factory('Projects', function () {
-    return {
-        all: function() {
-            var projectString = window.localStorage['projects'];
-            
-            if (projectString) {
-                return angular.fromJson(projectString);
+app.service('TaskService',
+    ['ProjectService',
+    function(ProjectService) {
+
+        var self = this;
+
+        self.all = function() {
+            var localData = window.localStorage['projects'],
+                activeProject = ProjectService.getLastActiveIndex();
+            if (localData) {
+                var result = angular.fromJson(localData);
+                console.log(result);
+                return result[activeProject].tasks;
             }
             return [];
-        },
-        save: function(projects) {
-            window.localStorage['projects'] = angular.toJson(projects);
-        },
-        newProject: function(projectTitle) {
-            return {
-                title: projectTitle,
-                tasks: []
-            }
-        },
-        getLastActiveIndex: function() {
-            return parseInt(window.localStorage['lastActiveProject']) || 0;
-        },
-        setLastActiveIndex: function(index) {
-            window.localStorage['lastActiveProject'] = index;
         }
+
+        self.create = function(task) {
+            console.log(task, ProjectService.getLastActiveIndex());
+        }
+
+        self.remove = function(task) {
+        }
+
+        self.complete = function(task) {
+        }
+    }]
+);
+
+app.service('ProjectService', function () {
+    var self = this;
+
+    self.all = function() {
+        var projectString = window.localStorage['projects'];
+
+        if (projectString) {
+            return angular.fromJson(projectString);
+        }
+        return [];
+    }
+
+    self.update = function(projects) {
+        window.localStorage['projects'] = angular.toJson(projects);
+    }
+
+    self.create = function(projectTitle) {
+        var projectArray = self.all();
+        var newProject = {
+            title: projectTitle,
+            tasks: []
+        };
+        projectArray.push(newProject);
+        window.localStorage['projects'] = angular.toJson(projectArray);
+    }
+
+    self.getLastActiveIndex = function() {
+        return parseInt(window.localStorage['lastActiveProject'], 10) || 0;
+    }
+
+    self.setLastActiveIndex = function(index) {
+        window.localStorage['lastActiveProject'] = index;
     }
 });
