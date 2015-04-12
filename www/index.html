@@ -36,7 +36,7 @@
                     </button>
                 </ion-header-bar>
 
-                <ion-content scroll="false">
+                <ion-content>
                     <ion-pane class="no-projects" padding="true" ng-show="isDefaultState()">
                         <button class="button button-icon button-add" ng-click="newProject()">
                             <i class="icon ion-plus-round"></i>
@@ -62,7 +62,7 @@
 
                 <ion-content scroll="false">
                     <ion-list>
-                        <ion-item ng-repeat="project in projects" ng-click="selectProject(project, index)" ng-class="{active: activeProject === project}">
+                        <ion-item ng-repeat="project in projectList" ng-click="selectProject(project, index)" ng-class="{active: activeProject === project}">
                             {{ project.title }}
                         </ion-item>
                     </ion-list>

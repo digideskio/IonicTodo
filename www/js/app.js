@@ -22,32 +22,41 @@ app.controller('TodoCtrl',
     ['$scope', '$timeout', '$ionicModal', '$ionicSideMenuDelegate', '$ionicPopup', 'TaskService', 'ProjectService',
     function ($scope, $timeout, $ionicModal, $ionicSideMenuDelegate, $ionicPopup, TaskService, ProjectService) {
 
-        $scope.newProject = function () {
-            var projectPopup = $ionicPopup.show({
-                template: '<input autofocus type="text" ng-model="popup.title">',
-                title: 'Name your project:',
-                scope: $scope,
-                buttons: [
-                    {text: 'Cancel'},
-                    {
-                        text: 'Save',
-                        type: 'button-positive',
-                        onTap: function (event) {
-                            if (!$scope.popup.title) {
-                                event.preventDefault();
-                            } else {
-                                return $scope.popup.title;
-                            }
-                        }
-                    }
-                ]
-            });
-            projectPopup.then(function (result) {
-                if ($scope.popup.title) {
-                    createProject();
-                }
-            });
+        $scope.activeProject = '';
+        $scope.projectList = ProjectService.all();
+
+        $scope.selectProject = function (project, index) {
+            $scope.activeProject = project;
+            ProjectService.setLastActiveIndex(index);
+            $ionicSideMenuDelegate.toggleLeft(false);
         };
+
+//        $scope.newProject = function () {
+//            var projectPopup = $ionicPopup.show({
+//                template: '<input autofocus type="text" ng-model="popup.title">',
+//                title: 'Name your project:',
+//                scope: $scope,
+//                buttons: [
+//                    {text: 'Cancel'},
+//                    {
+//                        text: 'Save',
+//                        type: 'button-positive',
+//                        onTap: function (event) {
+//                            if (!$scope.popup.title) {
+//                                event.preventDefault();
+//                            } else {
+//                                return $scope.popup.title;
+//                            }
+//                        }
+//                    }
+//                ]
+//            });
+//            projectPopup.then(function (result) {
+//                if ($scope.popup.title) {
+//                    createProject();
+//                }
+//            });
+//        };
 
     }]
 );
@@ -93,8 +102,12 @@ app.service('ProjectService', function () {
         return [];
     }
 
-    self.update = function(projects) {
-        window.localStorage['projects'] = angular.toJson(projects);
+    self.update = function(newTasks) {
+        var projectArray = self.all(),
+            index = self.getLastActiveIndex();
+        
+        projectArray[index].tasks = newTasksasks;
+        window.localStorage['projects'] = angular.toJson(projectArray);
     }
 
     self.create = function(projectTitle) {
