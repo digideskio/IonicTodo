@@ -7605,6 +7605,7 @@ a.button {
 
 .no-projects {
   color: #c0c0c0;
+  overflow: inherit;
   text-align: center; }
   .no-projects .button-add {
     border: 3px solid;

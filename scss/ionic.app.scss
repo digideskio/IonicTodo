@@ -23,8 +23,9 @@ $ionicons-font-path: "../lib/ionic/fonts" !default;
 
 .no-projects {
     color: #c0c0c0;
+    overflow: inherit;
     text-align: center;
-    
+
     .button-add {
         border: 3px solid;
         border-radius: 100%;

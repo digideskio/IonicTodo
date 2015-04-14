@@ -22,42 +22,147 @@ app.controller('TodoCtrl',
     ['$scope', '$timeout', '$ionicModal', '$ionicSideMenuDelegate', '$ionicPopup', 'TaskService', 'ProjectService',
     function ($scope, $timeout, $ionicModal, $ionicSideMenuDelegate, $ionicPopup, TaskService, ProjectService) {
 
+        $scope.projectPopup    = [];
         $scope.activeProject = '';
-        $scope.projectList = ProjectService.all();
+
+        $ionicModal.fromTemplateUrl('new-task.html', function (modal) {
+            $scope.taskModal = modal;
+        }, {
+            scope: $scope,
+            animation: 'slide-in-up'
+        });
+
+        $scope.isDefaultState = function () {
+            var state = false;
+            if ($scope.projectList.length < 1) {
+                $scope.defaultStateMessage = 'No projects.';
+                $scope.defaultTask = function() {$scope.newProject();};
+                state = true;
+            } else if ($scope.activeProject.tasks.length < 1) {
+                $scope.defaultStateMessage = 'Projects need tasks!';
+                $scope.defaultTask = function() {$scope.showTaskModal();}
+            }
+            return state;
+        };
+
+        $scope.projectList = ProjectService.all;
+        $scope.$watch( function (){ return ProjectService.all; }, function (newVal) {
+            $scope.projectList = newVal;
+            $scope.activeProject = $scope.projectList[ProjectService.getLastActiveIndex()];
+        });
+
+        $scope.newProject = function () {
+            var projectPopup = $ionicPopup.show({
+                template: '<input autofocus type="text" ng-model="projectPopup.title">',
+                title: 'Name your project:',
+                scope: $scope,
+                buttons: [
+                    {text: 'Cancel'},
+                    {
+                        text: 'Save',
+                        type: 'button-positive',
+                        onTap: function (event) {
+                            if (!$scope.projectPopup.title) {
+                                event.preventDefault();
+                            } else {
+                                return $scope.projectPopup.title;
+                            }
+                        }
+                    }
+                ]
+            });
+            projectPopup.then(function (result) {
+                if ($scope.projectPopup.title) {
+                    ProjectService.create(result);
+                    $ionicSideMenuDelegate.toggleLeft(false);
+                    $scope.projectPopup = [];
+                }
+            });
+        };
+
+        $scope.deleteProject = function (index) {
+            var deleteProjectPopup = $ionicPopup.show({
+                title: 'Are you sure you wish to delete this project?',
+                buttons: [
+                    {
+                        text: 'Cancel',
+                        onTap: function () {
+                            return false;
+                        }
+                    },
+                    {
+                        text: 'Delete',
+                        type: 'button-assertive',
+                        onTap: function () {
+                            return true;
+                        }
+                    }
+                ]
+            });
+            deleteProjectPopup.then(function (res) {
+                if (res) {
+                    ProjectService.delete(index);
+                    $ionicSideMenuDelegate.toggleLeft(false);
+                }
+            });
+        };
 
         $scope.selectProject = function (project, index) {
-            $scope.activeProject = project;
+            $scope.activeProject = $scope.projectList[index];
             ProjectService.setLastActiveIndex(index);
             $ionicSideMenuDelegate.toggleLeft(false);
         };
 
-//        $scope.newProject = function () {
-//            var projectPopup = $ionicPopup.show({
-//                template: '<input autofocus type="text" ng-model="popup.title">',
-//                title: 'Name your project:',
-//                scope: $scope,
-//                buttons: [
-//                    {text: 'Cancel'},
-//                    {
-//                        text: 'Save',
-//                        type: 'button-positive',
-//                        onTap: function (event) {
-//                            if (!$scope.popup.title) {
-//                                event.preventDefault();
-//                            } else {
-//                                return $scope.popup.title;
-//                            }
-//                        }
-//                    }
-//                ]
-//            });
-//            projectPopup.then(function (result) {
-//                if ($scope.popup.title) {
-//                    createProject();
-//                }
-//            });
-//        };
+        $scope.toggleProjectList = function () {
+            $ionicSideMenuDelegate.toggleLeft();
+        };
 
+        $scope.showTaskModal = function () {
+            $scope.taskModal.show();
+        };
+
+        $scope.hideTaskModal = function () {
+            $scope.taskModal.hide();
+        };
+
+        $scope.createTask = function (task) {
+            if (!$scope.activeProject || !task) {
+                return;
+            }
+            TaskService.create(task.title);
+            $scope.taskModal.hide();
+            task.title = '';
+        };
+
+        $scope.deleteTask = function (index) {
+            var deleteTaskPopup = $ionicPopup.show({
+                title: 'Are you sure you wish to delete this task?',
+                buttons: [
+                    {
+                        text: 'Cancel',
+                        onTap: function () {
+                            return false;
+                        }
+                    },
+                    {
+                        text: 'Delete',
+                        type: 'button-assertive',
+                        onTap: function () {
+                            return true;
+                        }
+                    }
+                ]
+            });
+            deleteTaskPopup.then(function (res) {
+                if (res) {
+                    TaskService.delete(index);
+                }
+            });
+        };
+
+        $scope.completeTask = function (index) {
+            TaskService.complete(index);
+        };
     }]
 );
 
@@ -67,64 +172,86 @@ app.service('TaskService',
 
         var self = this;
 
-        self.all = function() {
-            var localData = window.localStorage['projects'],
-                activeProject = ProjectService.getLastActiveIndex();
-            if (localData) {
-                var result = angular.fromJson(localData);
-                console.log(result);
-                return result[activeProject].tasks;
-            }
-            return [];
+        function update(array) {
+            var localData = ProjectService.all;
+            localData[ProjectService.getLastActiveIndex()].tasks = array;
+            window.localStorage.projects = angular.toJson(localData);
         }
 
-        self.create = function(task) {
-            console.log(task, ProjectService.getLastActiveIndex());
+        function get() {
+            return ProjectService.all[ProjectService.getLastActiveIndex()].tasks;
         }
 
-        self.remove = function(task) {
-        }
+        self.create = function(taskName) {
+            var tasksArray = get();
+            var newTask = {
+                title: taskName,
+                completed: false
+            };
+            tasksArray.push(newTask);
 
-        self.complete = function(task) {
-        }
+            update(tasksArray);
+        };
+
+        self.delete = function(index) {
+            var tasksArray = get();
+            tasksArray.splice(index, 1);
+            update(tasksArray);
+        };
+
+        self.complete = function(index) {
+            var tasksArray = get();
+            tasksArray[index].completed = true;
+            tasksArray[index].completedDate = new Date().toISOString();
+            update(tasksArray);
+        };
     }]
 );
 
 app.service('ProjectService', function () {
     var self = this;
 
-    self.all = function() {
-        var projectString = window.localStorage['projects'];
+    self.all = get();
 
+    function update(array) {
+        window.localStorage.projects = angular.toJson(array);
+        self.all = array;
+        console.log("ProjectService Update", array);
+    }
+
+    function get() {
+        var projectString = window.localStorage.projects;
         if (projectString) {
             return angular.fromJson(projectString);
         }
         return [];
     }
 
-    self.update = function(newTasks) {
-        var projectArray = self.all(),
-            index = self.getLastActiveIndex();
-        
-        projectArray[index].tasks = newTasksasks;
-        window.localStorage['projects'] = angular.toJson(projectArray);
-    }
-
     self.create = function(projectTitle) {
-        var projectArray = self.all();
+        var projectArray = get();
         var newProject = {
             title: projectTitle,
             tasks: []
         };
         projectArray.push(newProject);
-        window.localStorage['projects'] = angular.toJson(projectArray);
-    }
+        var newIndex = projectArray.length - 1;
+
+        update(projectArray);
+        self.setLastActiveIndex(newIndex);
+    };
+
+    self.delete = function(index) {
+        var projectArray = get();
+        projectArray.splice(index, 1);
+
+        update(projectArray);
+    };
 
     self.getLastActiveIndex = function() {
-        return parseInt(window.localStorage['lastActiveProject'], 10) || 0;
-    }
+        return parseInt(window.localStorage.lastActiveProject, 10) || 0;
+    };
 
     self.setLastActiveIndex = function(index) {
-        window.localStorage['lastActiveProject'] = index;
-    }
+        window.localStorage.lastActiveProject = index;
+    };
 });

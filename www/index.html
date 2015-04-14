@@ -25,31 +25,46 @@
             <ion-side-menu-content>
 
                 <ion-header-bar class="bar-dark" ng-show="!isDefaultState()">
-                    <button class="button button-icon" ng-click="toggleProjects()">
+                    <button class="button button-icon" ng-click="toggleProjectList()">
                         <i class="icon ion-navicon"></i>
                     </button>
 
                     <h1 class="title">{{ activeProject.title }}</h1>
 
-                    <button class="button button-icon" ng-click="manTasks()">
+                    <button class="button button-icon" ng-click="showTaskModal()">
                         <i class="icon ion-compose"></i>
                     </button>
                 </ion-header-bar>
 
                 <ion-content>
-                    <ion-pane class="no-projects" padding="true" ng-show="isDefaultState()">
-                        <button class="button button-icon button-add" ng-click="newProject()">
+                    <ion-pane class="no-projects" padding="true" ng-show="isDefaultState() || activeProject.tasks.length < 1">
+                        <button class="button button-icon button-add" ng-click="defaultTask()">
                             <i class="icon ion-plus-round"></i>
                         </button>
-                        <h3>No projects.</h3>
-                        <h3>Tap to add one!</h3>
+                        <h3 ng-click="defaultTask()">
+                            {{ defaultStateMessage }} <br>
+                            Tap to add one!
+                        </h3>
                     </ion-pane>
 
-                    <div class="list" ng-show="!isDefaultState()">
-                        <ion-checkbox ng-repeat="task in activeProject.tasks" ng-checked="task.checked" ng-click="completeTaks(task)">
+                    <ion-list class="list" ng-show="!isDefaultState()">
+                        <div class="item item-divider" ng-show="unfinishedTasks.length > 0">Unfinished Tasks</div>
+                        <ion-checkbox
+                            ng-repeat="task in unfinishedTasks = (activeProject.tasks | filter:{completed:false})"
+                            ng-model="task.completed"
+                            ng-change="completeTask($index)"
+                            on-hold="deleteTask($index)"
+                            ng-class="{'item-balanced': task.completed}">
                             {{ task.title }}
                         </ion-checkbox>
-                    </div>
+                        <div class="item item-divider" ng-show="finishedTasks.length > 0">Finished Tasks</div>
+                        <div class="item item-balanced"
+                             on-hold="deleteTask($index)"
+                             ng-repeat="task in finishedTasks = (activeProject.tasks | filter:{completed:true})">
+                            <small style="float: right;">({{ task.completedDate | date }})</small>
+                            {{ task.title }}
+                        </div>
+                    </ion-list>
                 </ion-content>
             </ion-side-menu-content>
 
@@ -62,13 +77,17 @@
 
                 <ion-content scroll="false">
                     <ion-list>
-                        <ion-item ng-repeat="project in projectList" ng-click="selectProject(project, index)" ng-class="{active: activeProject === project}">
+                        <ion-item
+                            ng-repeat="project in projectList"
+                            ng-click="selectProject(project, $index)"
+                            on-hold="deleteProject($index)"
+                            ng-class="{active: activeProject === project}">
                             {{ project.title }}
                         </ion-item>
                     </ion-list>
                 </ion-content>
             </ion-side-menu>
-            
+
         </ion-side-menus>
 
 
@@ -76,7 +95,7 @@
             <div class="modal">
                 <ion-header-bar class="bar-secondary">
                     <h1 class="title">New Task</h1>
-                    <button class="button button-clear button-positive" ng-click="closeNewTask()">Cancel</button>
+                    <button class="button button-clear button-positive" ng-click="hideTaskModal()">Cancel</button>
                 </ion-header-bar>
                 <ion-content>
                     <form ng-submit="createTask(task)">
